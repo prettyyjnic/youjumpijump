@@ -12,7 +12,7 @@ import (
 	"runtime/debug"
 	"time"
 
-	jump "github.com/faceair/youjumpijump"
+	jump "github.com/prettyyjnic/youjumpijump"
 )
 
 type ScreenshotRes struct {
