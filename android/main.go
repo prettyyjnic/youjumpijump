@@ -26,7 +26,8 @@ var basePath string
 var tmpScreenShotPath = "/sdcard/screenshot.png"
 var startCoor = image.Point{X: 336, Y: 1129} // 起点坐标
 var minScanY = 610                           // 开始扫描的点的Y坐标，小于这个坐标的为显示分数的坐标
-var defaultBgDistance float64 = 0.99555          // 背景颜色相似度
+var defaultBgDistance float64 = 0.96400          // 背景颜色相似度
+var defaultRoleDistance float64 = 0.93400          // 背景颜色相似度
 var roleRgb = [3]int{55, 60, 102}
 
 func init() {
@@ -69,19 +70,19 @@ func shotImages() string {
 }
 
 func main() {
-	var a = [3]int{255,246,166}
-	var b = [3]int{255,238,97}
-	var tmp = (255 - math.Abs(float64(a[0]-b[0]))*0.297 - math.Abs(float64(a[1]-b[1]))*0.593 - math.Abs(float64(
-		a[2]-b[2]))*0.11 ) / 255
-
-	fmt.Println(tmp)
-	return
+	//var a = [3]int{53,53,63}
+	//var b = [3]int{72, 60, 96}
+	//var tmp = (255 - math.Abs(float64(a[0]-b[0]))*0.297 - math.Abs(float64(a[1]-b[1]))*0.593 - math.Abs(float64(
+	//	a[2]-b[2]))*0.11 ) / 255
+	//
+	//fmt.Println(tmp)
 	//return
-	//img := decodeImg("./debugger/screenshot9.png")
-	////nextCoor, err := findNextCoor(img) // 下一个要跳的点
+	//return
+	//img := decodeImg("./debugger/screenshot67.png")
+	//nextCoor, err := findNextCoor(img) // 下一个要跳的点
 	//target, err := findCurrentCoor(img)
 	//checkErr(err)
-	////fmt.Println(nextCoor)
+	//fmt.Println(nextCoor)
 	//fmt.Println(target)
 	//return
 	//
@@ -149,20 +150,20 @@ func findCurrentCoor(pngdec image.Image) (targetPoint image.Point, err error) {
 	for x := 10; x < maxX; x++ {
 	nextY:
 		for y := (maxY * 3 / 4); y > 0; y-- {
-			if colorSimilar(jump.GetRGB(pngdec.ColorModel(), pngdec.At(x, y)), roleRgb, 0.983) { // 棋子坐标
+			if colorSimilar(jump.GetRGB(pngdec.ColorModel(), pngdec.At(x, y)), roleRgb, 0.95) { // 棋子坐标
 				for i := x - 20; i < x+20; i++ {
-					if !colorSimilar(jump.GetRGB(pngdec.ColorModel(), pngdec.At(i, y)), roleRgb, 0.983) {
+					if !colorSimilar(jump.GetRGB(pngdec.ColorModel(), pngdec.At(i, y)), roleRgb, 0.95) {
 						continue nextY
 					}
 				}
 				for i := y - 20; i < y+20; i++ {
-					if !colorSimilar(jump.GetRGB(pngdec.ColorModel(), pngdec.At(x, i)), roleRgb, 0.983) {
+					if !colorSimilar(jump.GetRGB(pngdec.ColorModel(), pngdec.At(x, i)), roleRgb, 0.95) {
 						continue nextY
 					}
 				}
 
 				targetPoint.X = x
-				targetPoint.Y = y
+				targetPoint.Y = y+90
 				fmt.Printf("找到当前点的点坐标(%d, %d)\n", x, y)
 				return
 			}
@@ -208,7 +209,9 @@ func findNextCoor(pngdec image.Image) (targetPoint image.Point, err error) {
 
 	for y := minScanY; y < maxY; y++ {
 		for x := 100; x < maxX; x++ {
-			if colorSimilar(jump.GetRGB(pngdec.ColorModel(), pngdec.At(x, y)), bgRgb, defaultBgDistance) { // 背景颜色
+			if colorSimilar(jump.GetRGB(pngdec.ColorModel(), pngdec.At(x, y)), bgRgb,
+				defaultBgDistance) || colorSimilar(jump.GetRGB(pngdec.ColorModel(), pngdec.At(x, y)), roleRgb,
+				defaultRoleDistance) { // 背景颜色 或者 角色
 				continue;
 			}
 			//	扫描到的第一个点为 最上方的点
