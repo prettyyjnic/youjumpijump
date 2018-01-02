@@ -76,7 +76,7 @@ func TimeStamp() int {
 }
 
 // 获取 rgb 颜色
-func getRGB(m color.Model, c color.Color) [3]int {
+func GetRGB(m color.Model, c color.Color) [3]int {
 	if m == color.RGBAModel {
 		return [3]int{int(c.(color.RGBA).R), int(c.(color.RGBA).G), int(c.(color.RGBA).B)}
 	} else if m == color.RGBA64Model {
@@ -110,7 +110,7 @@ func Find(src image.Image) ([]int, []int) {
 		line := 0
 		for x := 0; x < w; x++ {
 			c := src.At(x, y)
-			if colorSimilar(getRGB(src.ColorModel(), c), jumpCubeColor, 20) {
+			if colorSimilar(GetRGB(src.ColorModel(), c), jumpCubeColor, 20) {
 				line++
 			} else {
 				if y > 300 && x-line > 10 && line > 30 {
@@ -134,10 +134,10 @@ func Find(src image.Image) ([]int, []int) {
 	possible := [][]int{}
 	for y := 0; y < h; y++ {
 		line := 0
-		bgColor := getRGB(src.ColorModel(), src.At(w-25, y))
+		bgColor := GetRGB(src.ColorModel(), src.At(w-25, y))
 		for x := 0; x < w; x++ {
 			c := src.At(x, y)
-			if !colorSimilar(getRGB(src.ColorModel(), c), bgColor, 5) {
+			if !colorSimilar(GetRGB(src.ColorModel(), c), bgColor, 5) {
 				line++
 			} else {
 				if y > 300 && x-line > 10 && line > 35 && ((x-line/2) < (jumpCube[0]-20) || (x-line/2) > (jumpCube[0]+20)) {
