@@ -21,20 +21,22 @@ import (
 )
 
 var adb string
-var stepCount int // 步数
+
 var basePath string
 var tmpScreenShotPath = "/sdcard/screenshot.png"
 
-var minScanY = 610                        // 开始扫描的点的Y坐标，小于这个坐标的为显示分数的坐标
-var defaultBgDistance float64 = 0.96400   // 背景颜色相似度
-var defaultRoleDistance float64 = 0.93400 // 背景颜色相似度
-var roleRgb = [3]int{55, 60, 102}
-
+var minScanY = 610                                 // 开始扫描的点的Y坐标，小于这个坐标的为显示分数的坐标
+var defaultBgDistance float64 = 0.9723254901960784 // 背景颜色相似度
+var defaultRoleDistance float64 = 0.94500          // 角色
+var roleRgb = [3]int{54, 60, 102}
+var minDistinceFromRole = 80
+var roleR = 15 // 角色半径
+var minPoinDistanct float64 = 39
 var red = color.RGBA{255, 0, 0, 255}
 var black = color.RGBA{0, 0, 0, 255}
 var green = color.RGBA{0, 255, 0, 255}
 var blue = color.RGBA{0, 0, 255, 255}
-
+var errCanNotMoveRight = errors.New("不能继续向右移动了")
 func init() {
 	basePath, _ = filepath.Abs("./")
 	basePath = strings.TrimRight(basePath, "/")
@@ -44,33 +46,19 @@ func init() {
 	if ok, _ := jump.Exists(basePath + "/debugger"); !ok {
 		os.MkdirAll(basePath+"/debugger", os.ModePerm)
 	}
+
+}
+
+func initDebuggerDir() {
 	files, err := ioutil.ReadDir(basePath + "/debugger")
 	checkErr(err)
 	for _, f := range files {
 		fname := f.Name()
-		os.Remove(basePath + "/debugger/" + fname)
+		fmt.Println(fname)
+		//os.Remove(basePath + "/debugger/" + fname)
 	}
 }
 
-//删除已经没有用了的图片
-func dealTmpImages(){
-	go func() {
-		for{
-			<- time.After(time.Second*2)
-			files, err := ioutil.ReadDir(basePath + "/debugger")
-			checkErr(err)
-
-			for _, f := range files {
-				fname := f.Name()
-				fname = strings.TrimRight(fname, "_deal.png")
-				if i, _:= strconv.Atoi(fname ) ; i + 2 < stepCount {// 只保存最近两张
-					os.Remove(basePath + "/debugger/" + fname)
-				}
-			}
-		}
-	}()
-
-}
 
 func checkErr(err error) {
 	if err != nil {
@@ -84,7 +72,7 @@ func rediretCmd(cmd *exec.Cmd) {
 }
 
 // 截图到电脑
-func shotImages() string {
+func shotImages(stepCount int) string {
 	exec.Command(adb, "shell", "rm", tmpScreenShotPath).Run()
 	var err error
 	var cmd *exec.Cmd
@@ -93,7 +81,7 @@ func shotImages() string {
 	err = cmd.Run()
 	checkErr(err)
 	filename := basePath + "/debugger/" + strconv.Itoa(stepCount) + ".png"
-	stepCount++
+
 	//保存到电脑
 	cmd = exec.Command(adb, "pull", tmpScreenShotPath, filename)
 	err = cmd.Run()
@@ -103,17 +91,21 @@ func shotImages() string {
 }
 
 func main() {
-	//var a = [3]int{53,53,63}
-	//var b = [3]int{72, 60, 96}
+	//var a = [3]int{243, 244, 188}
+	//var b = [3]int{246, 246, 246}
 	//var tmp = (255 - math.Abs(float64(a[0]-b[0]))*0.297 - math.Abs(float64(a[1]-b[1]))*0.593 - math.Abs(float64(
 	//	a[2]-b[2]))*0.11 ) / 255
 	//
 	//fmt.Println(tmp)
 	//return
 	//return
-	//img := decodeImg("./debugger/screenshot67.png")
-	//nextCoor, err := findNextCoor(img) // 下一个要跳的点
+	//img := decodeImg("./special/46_deal.png")
 	//target, err := findCurrentCoor(img)
+	//checkErr(err)
+	//maxY := img.Bounds().Max.Y
+	//maxX := img.Bounds().Max.X
+	//bgCoor := image.Point{maxX / 2, 35 * maxY / 100}
+	//nextCoor, err := findNextCoor(img, target, bgCoor) // 下一个要跳的点
 	//checkErr(err)
 	//fmt.Println(nextCoor)
 	//fmt.Println(target)
@@ -124,24 +116,54 @@ func main() {
 	//return
 
 	var ratio float64
-	ratio = 1.38
-	log.Printf("now jump ratio is %f", ratio)
-	dealTmpImages()
-	for {
-		filename := shotImages()
-		fmt.Println("保存截图", filename)
+	var stepCount int // 步数
+	ratio = 1.44
+	log.Printf("now jump ratio is %f\n", ratio)
+	go func() {
+		for {
+			<-time.After(time.Second * 2)
+			files, err := ioutil.ReadDir(basePath + "/debugger")
+			checkErr(err)
 
+			for _, f := range files {
+				fname := f.Name()
+				step := strings.TrimRight(fname, "_deal.png")
+				//fmt.Println(fname)
+				if i, _ := strconv.Atoi(step); i+3 < stepCount { // 只保存最近两张
+					//os.Remove(basePath + "/debugger/" + fname)
+				}
+			}
+		}
+	}()
+	initDebuggerDir()
+
+	for {
+		stepCount++
+		log.Printf("step: %d\n", stepCount)
+		filename := shotImages(stepCount)
 
 		infile, err := os.Open(filename)
 		checkErr(err)
 		img, err := png.Decode(infile)
 		checkErr(err)
+		//背景点
+		// 查找背景色
+		// 取左上角和右下角的点的颜色
+		maxY := img.Bounds().Max.Y
+		maxX := img.Bounds().Max.X
+		bgCoor := image.Point{maxX / 2, 39 * maxY / 100}
+		bgRgb := jump.GetRGB(img.ColorModel(), img.At(bgCoor.X, bgCoor.Y))
+		log.Printf("背景颜色点 %v\n", bgCoor)
+		log.Printf("背景颜色: %v\n", bgRgb)
+
 		// 当前点
 		startCoor, err := findCurrentCoor(img)
 		checkErr(err)
-
-		nextCoor, err := findNextCoor(img, startCoor) // 下一个要跳的点
+		log.Printf("当前点坐标: %v\n", startCoor)
+		// 下一个要跳的点
+		nextCoor, err := findNextCoor(img, startCoor, bgCoor)
 		checkErr(err)
+		log.Printf("要挑的点坐标: %v\n", nextCoor)
 
 		var dealImg draw.Image
 		dealImg = image.NewRGBA(img.Bounds())
@@ -151,8 +173,10 @@ func main() {
 		drawPoint(dealImg, nextCoor, green)
 		//描出当前点
 		drawPoint(dealImg, startCoor, red)
+		//描出背景
+		drawPoint(dealImg, bgCoor, blue)
 		//保存debug 的图
-		dealFilename := basePath + "/debugger/" + strconv.Itoa(stepCount-1) + "_deal.png"
+		dealFilename := basePath + "/debugger/" + strconv.Itoa(stepCount) + "_deal.png"
 		dealFileFp, err := os.Create(dealFilename)
 		checkErr(err)
 		err = png.Encode(dealFileFp, dealImg)
@@ -161,19 +185,22 @@ func main() {
 
 		ms := CalSwipeMs(startCoor, nextCoor, ratio)
 
-		log.Printf("step %d, from:%v to:%v press:%vms", stepCount-1, startCoor, nextCoor, ms)
+		log.Printf("step %d, from:%v to:%v press:%vms\n", stepCount, startCoor, nextCoor, ms)
 		_, err = exec.Command(adb, "shell", "/system/bin/input", "swipe", "320", "410", "320", "410", strconv.Itoa(ms)).Output()
 		checkErr(err)
 		infile.Close()
 
-		os.Remove(filename)// 删除临时文件
-		time.Sleep(1500 * time.Millisecond)
+		os.Remove(filename) // 删除临时文件
+		<-time.After(1500 * time.Millisecond)
 	}
 }
 
 // 计算要按住屏幕的时间
 func CalSwipeMs(startCoor, nextCoor image.Point, ratio float64) int {
-	ms := int(math.Pow(math.Pow(float64(startCoor.X-nextCoor.X), 2)+math.Pow(float64(startCoor.Y-nextCoor.Y), 2), 0.5) * ratio)
+	distance := math.Pow(math.Pow(float64(startCoor.X-nextCoor.X), 2)+math.Pow(float64(startCoor.Y-nextCoor.Y), 2), 0.5)
+	ms := int(distance * ratio)
+
+	log.Printf("距离：%f 时间: %d", distance, ms)
 	return ms
 }
 
@@ -193,24 +220,25 @@ func findCurrentCoor(pngdec image.Image) (targetPoint image.Point, err error) {
 	maxY := pngdec.Bounds().Max.Y
 	maxX := pngdec.Bounds().Max.X
 	//	扫描获取下一个跳的图形的点，和背影颜色 的相似度大的点
-	for x := 10; x < maxX; x++ {
+
+	for y := (maxY * 60 / 100); y > 0; y-- {
 	nextY:
-		for y := (maxY * 3 / 4); y > 0; y-- {
-			if colorSimilar(jump.GetRGB(pngdec.ColorModel(), pngdec.At(x, y)), roleRgb, 0.95) { // 棋子坐标
-				for i := x - 20; i < x+20; i++ {
-					if !colorSimilar(jump.GetRGB(pngdec.ColorModel(), pngdec.At(i, y)), roleRgb, 0.95) {
+		for x := maxX/10; x < maxX; x++ {
+			if colorSimilar(jump.GetRGB(pngdec.ColorModel(), pngdec.At(x, y)), roleRgb, defaultRoleDistance) { // 棋子坐标
+				for i := x - roleR; i < x+roleR; i++ {
+					if !colorSimilar(jump.GetRGB(pngdec.ColorModel(), pngdec.At(i, y)), roleRgb, defaultRoleDistance) {
 						continue nextY
 					}
 				}
-				for i := y - 20; i < y+20; i++ {
-					if !colorSimilar(jump.GetRGB(pngdec.ColorModel(), pngdec.At(x, i)), roleRgb, 0.95) {
+				for i := y - roleR; i < y; i++ {
+					if !colorSimilar(jump.GetRGB(pngdec.ColorModel(), pngdec.At(x, i)), roleRgb, defaultRoleDistance) {
 						continue nextY
 					}
 				}
 
-				targetPoint.X = x
-				targetPoint.Y = y + 90
-				fmt.Printf("找到当前点的点坐标(%d, %d)\n", x, y)
+				targetPoint.X = x + 4
+				targetPoint.Y = y
+				//log.Printf("找到当前点的点坐标(%d, %d)\n", x, y)
 				return
 			}
 		}
@@ -228,105 +256,130 @@ func decodeImg(filename string) image.Image {
 }
 
 //查找下一个要跳的的坐标点
-func findNextCoor(pngdec image.Image, startCoor image.Point) (targetPoint image.Point, err error) {
+func findNextCoor(pngdec image.Image, startCoor, bgCoor image.Point) (targetPoint image.Point, err error) {
 	// 查找背景色
 	// 取左上角和右下角的点的颜色
 	maxY := pngdec.Bounds().Max.Y
 	maxX := pngdec.Bounds().Max.X
-	fmt.Println("maxY", maxY, "maxX", maxX)
 
-	bgRgb := jump.GetRGB(pngdec.ColorModel(), pngdec.At(maxX/2, 39 / 100 * maxY))
-	fmt.Println("背景颜色", bgRgb)
-
+	bgRgb := jump.GetRGB(pngdec.ColorModel(), pngdec.At(bgCoor.X, bgCoor.Y))
+	log.Printf("背影颜色：%v", bgRgb)
 	var targetColor [3]int
-	var targetGraphicsPointArr [4]image.Point // 目标图形 上右下左
+	var leftTopPoint image.Point // 目标图形 上右下左
 
 	//	扫描获取下一个跳的图形的点，和背影颜色 的相似度大的点
 
 	for y := minScanY; y < maxY; y++ {
-		for x := 100; x < maxX; x++ {
+		for x := maxX / 10; x < maxX; x++ {
 			//colorSimilar(jump.GetRGB(pngdec.ColorModel(), pngdec.At(x, y)), roleRgb,
 			//	defaultRoleDistance
 			if colorSimilar(jump.GetRGB(pngdec.ColorModel(), pngdec.At(x, y)), bgRgb,
-				defaultBgDistance) ||  (( startCoor.X -20 ) < x && (startCoor.X + 20 ) > x ) { // 背景颜色 或者 跟角色的 Y 轴 + - 20 px
+				defaultBgDistance) || (( startCoor.X-minDistinceFromRole ) < x && (startCoor.X+minDistinceFromRole ) > x ) { // 背景颜色 或者 跟角色的 Y 轴 + - 20 px
 				continue;
 			}
 			//	扫描到的第一个点为 最上方的点
-			if targetGraphicsPointArr[0].X == 0 || targetGraphicsPointArr[0].Y == 0 {
-				targetGraphicsPointArr[0].X = x
-				targetGraphicsPointArr[0].Y = y
+			if leftTopPoint.X == 0 || leftTopPoint.Y == 0 {
+				leftTopPoint.X = x
+				leftTopPoint.Y = y
 				targetColor = jump.GetRGB(pngdec.ColorModel(), pngdec.At(x, y))
 			}
-			if targetGraphicsPointArr[0].Y > y {
-				targetGraphicsPointArr[0].X = x
-				targetGraphicsPointArr[0].Y = y
+			if leftTopPoint.Y > y {
+				leftTopPoint.X = x
+				leftTopPoint.Y = y
 				targetColor = jump.GetRGB(pngdec.ColorModel(), pngdec.At(x, y))
 			}
 		}
 	}
-	fmt.Println("找到最上方的点坐标(", targetGraphicsPointArr[0].X, ",", targetGraphicsPointArr[0].Y, ") 颜色：", targetColor)
-	if targetGraphicsPointArr[0].X == 0 || targetGraphicsPointArr[0].Y == 0 {
+	log.Println("找到最上方的点坐标(", leftTopPoint.X, ",", leftTopPoint.Y, ") 颜色：", targetColor)
+	if leftTopPoint.X == 0 || leftTopPoint.Y == 0 {
 		err = errors.New("找不到要跳的上方点")
 		return
 	}
-	targetPoint.X = targetGraphicsPointArr[0].X
-	targetPoint.Y = targetGraphicsPointArr[0].Y + 70
+	//使用纯色搜索算法
+	targetPoint, err = Maze(pngdec, leftTopPoint, targetColor)
+	log.Printf("纯色搜索算法结果：%v", targetPoint)
+	if err != nil {
+		targetPoint.X = leftTopPoint.X
+		targetPoint.Y = leftTopPoint.Y + 70
+		log.Printf("使用模糊结果：%v", targetPoint)
+		err = nil
+	}
 	return
-
-
 
 }
 
-//没有用
-func maze(pngdec image.Image, targetColor [3]int){
+// 向左下角进行搜索
+func Maze(pngdec image.Image, startPoint image.Point, targetColor [3]int) (point image.Point, err error) {
 	var targetGraphicsPointArr [4]image.Point
 	// 纯色 目标图形使用 迷宫算法
 	//走迷宫算法，获取 另外三个点,
 	var nextPoint image.Point
-	var hadMove = false
-	nextPoint.X = targetGraphicsPointArr[0].X
-	nextPoint.Y = targetGraphicsPointArr[0].Y
-	var nextDirec int
+	for i := 0; i < 4; i++ {
+		targetGraphicsPointArr[i].X = startPoint.X
+		targetGraphicsPointArr[i].Y = startPoint.Y
+	}
+
 	for {
-		nextPoint, nextDirec = searchNextPoint(pngdec, nextPoint, targetColor, nextDirec)
-		fmt.Println("nextPoint", nextPoint)
-		fmt.Println("start", targetGraphicsPointArr[0])
-		hadMove = true
-		if targetGraphicsPointArr[1].X == 0 || nextPoint.X > targetGraphicsPointArr[1].X { // 最右边的点
+		var errTmp error
+		nextPoint, errTmp = searchLeftNextPoint(pngdec, startPoint, targetColor)
+		if nextPoint.X == startPoint.X && nextPoint.Y == startPoint.Y { // 没有进行移动
+			break
+		}
+		startPoint.X = nextPoint.X
+		startPoint.Y = nextPoint.Y
+		if nextPoint.X > targetGraphicsPointArr[1].X { // 最右边的点
 			targetGraphicsPointArr[1].X = nextPoint.X
 			targetGraphicsPointArr[1].Y = nextPoint.Y
 		}
-		if targetGraphicsPointArr[2].Y == 0 || nextPoint.Y > targetGraphicsPointArr[2].Y { // 最下边的点
+		if nextPoint.Y > targetGraphicsPointArr[2].Y { // 最下边的点
 			targetGraphicsPointArr[2].X = nextPoint.X
 			targetGraphicsPointArr[2].Y = nextPoint.Y
 		}
-		if targetGraphicsPointArr[3].X == 0 || nextPoint.X < targetGraphicsPointArr[3].X { // 最左边的点
+		if nextPoint.X < targetGraphicsPointArr[3].X { // 最左边的点
 			targetGraphicsPointArr[3].X = nextPoint.X
 			targetGraphicsPointArr[3].Y = nextPoint.Y
 		}
-		if nextPoint.X == targetGraphicsPointArr[0].X && nextPoint.Y == targetGraphicsPointArr[0].Y && hadMove {
+		if errTmp !=nil && errTmp == errCanNotMoveRight {
 			break
 		}
 	}
-	fmt.Println(targetGraphicsPointArr)
+	// 获取中点
+	point.X = (targetGraphicsPointArr[0].X + targetGraphicsPointArr[2].X) / 2
+	point.Y = (targetGraphicsPointArr[0].Y + targetGraphicsPointArr[2].Y) / 2
+
+	//检查点是否正确
+	leftTopDistinct := math.Abs(float64(targetGraphicsPointArr[3].X-targetGraphicsPointArr[0].X)) // 最左距离最上的x 距离
+	leftBottomDistinct := math.Abs(float64(targetGraphicsPointArr[3].X-targetGraphicsPointArr[2].X)) // 最左距离最下的x 距离
+	topDistinct := math.Abs(float64(targetGraphicsPointArr[2].Y-targetGraphicsPointArr[0].Y))
+	log.Printf("纯色算法结果 %v left: %d top: %d\n", targetGraphicsPointArr, leftTopDistinct, topDistinct)
+	if leftTopDistinct < minPoinDistanct || topDistinct < minPoinDistanct || leftBottomDistinct < minPoinDistanct {
+		err = errors.New("点距过小，不合适")
+	}
 	return
 }
 
-//迷宫算法，查找下一个点, 左侧搜索算法, 没有用
-func searchNextPoint(pngdec image.Image, start image.Point, targetColor [3]int, direc int) (image.Point, int) {
-	if direc != 3 && colorSimilar(jump.GetRGB(pngdec.ColorModel(), pngdec.At(start.X-1, start.Y)), targetColor, 0.98) { // 向左移动一像素
-		return image.Point{X: start.X - 1, Y: start.Y}, 1
+//迷宫算法，查找下一个点, 向下方进行搜索
+func searchLeftNextPoint(pngdec image.Image, start image.Point, targetColor [3]int) (image.Point, error) {
+	var distinct = 0.995555
+	if colorSimilar(jump.GetRGB(pngdec.ColorModel(), pngdec.At(start.X-1, start.Y)), targetColor, distinct) { // 向左移动一像素
+	//fmt.Printf("左移动 %v\n", image.Point{X: start.X - 1, Y: start.Y})
+		return image.Point{X: start.X - 1, Y: start.Y}, nil
 	}
-	if direc != 4 && colorSimilar(jump.GetRGB(pngdec.ColorModel(), pngdec.At(start.X, start.Y+1)), targetColor, 0.98) { // 向下移动一像素
-		return image.Point{X: start.X, Y: start.Y + 1}, 2
+	if colorSimilar(jump.GetRGB(pngdec.ColorModel(), pngdec.At(start.X, start.Y+1)), targetColor, distinct) { // 向下移动一像素
+		//fmt.Printf("下移动 %v\n", image.Point{X: start.X , Y: start.Y+1})
+		return image.Point{X: start.X, Y: start.Y + 1}, nil
 	}
-	if direc != 1 && colorSimilar(jump.GetRGB(pngdec.ColorModel(), pngdec.At(start.X+1, start.Y)), targetColor, 0.98) { // 向右移动一像素
-		return image.Point{X: start.X + 1, Y: start.Y}, 3
+	//向右下方移动
+	for x := start.X; x < pngdec.Bounds().Max.X; x++ {
+		//fmt.Printf("右移动 %v\n", image.Point{X: x, Y: start.Y})
+		if !colorSimilar(jump.GetRGB(pngdec.ColorModel(), pngdec.At(x, start.Y)), targetColor, distinct) { // 右边不是可以移动的点
+			return image.Point{X: x, Y: start.Y}, errCanNotMoveRight
+		}
+		if colorSimilar(jump.GetRGB(pngdec.ColorModel(), pngdec.At(x, start.Y+1)), targetColor, distinct) {
+			return image.Point{X: x, Y: start.Y + 1},nil
+		}
 	}
-	if direc != 2 && colorSimilar(jump.GetRGB(pngdec.ColorModel(), pngdec.At(start.X, start.Y-1)), targetColor, 0.98) { // 向上移动一像素
-		return image.Point{X: start.X, Y: start.Y - 1}, 4
-	}
-	return image.Point{X: start.X, Y: start.Y}, 0
+	return image.Point{X: start.X, Y: start.Y}, nil
 }
 
 //颜色相似度

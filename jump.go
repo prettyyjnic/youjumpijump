@@ -4,13 +4,8 @@ import (
 	"image"
 	"image/color"
 	"image/png"
-	"io"
-	"io/ioutil"
-	"log"
 	"math"
 	"os"
-	"path/filepath"
-	"strconv"
 	"time"
 
 	"github.com/nfnt/resize"
