@@ -15,7 +15,7 @@ import (
 
 var minScanY = 610                                 // 开始扫描的点的Y坐标，小于这个坐标的为显示分数的坐标
 var defaultBgDistance float64 = 0.9723254901960784 // 背景颜色相似度
-var defaultRoleDistance float64 = 0.94500          // 角色
+var defaultRoleDistance float64 = 0.96700          // 角色
 var roleRgb = [3]int{54, 60, 102}
 var minDistinceFromRole = 80
 var roleR = 15 // 角色半径
@@ -142,7 +142,7 @@ func FindCurrentCoor(pngdec image.Image) (targetPoint image.Point, err error) {
 						continue nextY
 					}
 				}
-				for i := y - roleR; i < y; i++ {
+				for i := y - roleR * 2; i < y; i++ {
 					if !colorSimilar(GetRGB(pngdec.ColorModel(), pngdec.At(x, i)), roleRgb, defaultRoleDistance) {
 						continue nextY
 					}

@@ -107,7 +107,7 @@ func check(){
 	checkErr(err)
 
 	log.Println("nextCoor (275,821)", nextCoor)
-	log.Println("current (843,1139)", target)
+	log.Println("current (850,1139)", target)
 
 	img = decodeImg("./special/119_deal.png")
 	target, err = jump.FindCurrentCoor(img)
@@ -119,7 +119,19 @@ func check(){
 	checkErr(err)
 
 	log.Println("nextCoor (306,835)", nextCoor)
-	log.Println("current (856,1152)", target)
+	log.Println("current (838,1007)", target)
+
+	img = decodeImg("./special/50_deal.png")
+	target, err = jump.FindCurrentCoor(img)
+	checkErr(err)
+	maxY = img.Bounds().Max.Y
+	maxX = img.Bounds().Max.X
+	bgCoor = image.Point{maxX / 2, 35 * maxY / 100}
+	nextCoor, err = jump.FindNextCoor(img, target, bgCoor) // 下一个要跳的点
+	checkErr(err)
+
+	log.Println("nextCoor (438,888)", nextCoor)
+	log.Println("current (694,1071)", target)
 }
 
 // 小米5s可以正常运行
@@ -131,8 +143,8 @@ func main() {
 	//
 	//fmt.Println(tmp)
 	//return
-	//check()
-	//return
+	// check()
+	// return
 	var ratio float64
 	var err error
 	var stepCount int // 步数
@@ -180,7 +192,7 @@ func main() {
 		checkErr(err)
 		infile.Close()
 
-		os.Remove(filename) // 删除临时文件
+		os.Remove(filename) // 删除临时文件		
 		<-time.After(1500 * time.Millisecond)
 	}
 }
