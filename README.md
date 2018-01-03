@@ -1,4 +1,4 @@
-# 微信跳一跳外挂
+# 微信跳一跳小帮手
 参考：https://github.com/faceair/youjumpijump
 
 用 Golang 实现是因为我只会 Golang,
