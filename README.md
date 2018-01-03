@@ -27,5 +27,4 @@ iOS 设备
 
 
 ## 实验结果
-
-![](https://gitee.com/stuinfer/youjumpijump/blob/master/special/119_deal.png)
+![image](http://59.110.239.205/119_deal.png)
