@@ -16,48 +16,8 @@ import (
 	"github.com/nfnt/resize"
 )
 
-var basePath string
-
-func init() {
-
-	//ex, err := os.Executable()
-	ex, err := filepath.Abs(filepath.Dir(os.Args[0]))
-	if err != nil {
-		panic(err)
-	}
-	basePath = filepath.Dir(ex)
-
-	if ok, _ := Exists(basePath + "/debugger"); !ok {
-		os.MkdirAll(basePath+"/debugger", os.ModePerm)
-	}
-
-	os.Remove(basePath + "/debugger/debug.log")
-	logFile, _ := os.OpenFile(basePath+"/debugger/debug.log", os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
-	log.SetOutput(io.MultiWriter(os.Stdout, logFile))
-}
 
 // Debugger mv 文件到 debugger 目录
-func Debugger() {
-	if ok, _ := Exists(basePath + "/jump.png"); ok {
-		os.Rename(basePath+"/jump.png", basePath+"/debugger/"+strconv.Itoa(TimeStamp())+".png")
-
-		files, err := ioutil.ReadDir(basePath + "/debugger/")
-		if err != nil {
-			panic(err)
-		}
-
-		for _, f := range files {
-			fname := f.Name()
-			ext := filepath.Ext(fname)
-			name := fname[0 : len(fname)-len(ext)]
-			if ts, err := strconv.Atoi(name); err == nil {
-				if TimeStamp()-ts > 10 {
-					os.Remove(basePath + "/debugger/" + fname)
-				}
-			}
-		}
-	}
-}
 
 func Exists(path string) (bool, error) {
 	_, err := os.Stat(path)
