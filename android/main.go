@@ -14,6 +14,7 @@ import (
 	"image"
 	"time"
 	"io/ioutil"
+	"runtime/debug"
 )
 
 var basePath string
@@ -46,7 +47,11 @@ func initDebuggerDir() {
 func checkErr(err error) {
 	if err != nil {
 		log.Printf("发生错误：%v",err)
-		os.Exit(1)
+		log.Printf("%s", debug.Stack())
+		fmt.Print("the program has crashed, press any key to exit")
+		var c string
+		fmt.Scanln(&c)
+		os.Exit(0)
 	}
 }
 
@@ -74,6 +79,7 @@ func shotImages(stepCount int) string {
 	return filename
 }
 
+// 测试用
 func check(){
 	var img image.Image
 	var err error
@@ -116,7 +122,7 @@ func check(){
 	log.Println("current (856,1152)", target)
 }
 
-
+// 小米5s可以正常运行
 func main() {
 	//var a = [3]int{243, 244, 188}
 	//var b = [3]int{246, 246, 246}
@@ -127,11 +133,17 @@ func main() {
 	//return
 	//check()
 	//return
-
-
 	var ratio float64
+	var err error
 	var stepCount int // 步数
 	ratio = 1.44
+
+	fmt.Print("input jump ratio (recommend 1.44):")
+	_, err = fmt.Scanln(&ratio)
+	if err != nil {
+		log.Printf("input is empty, will use 1.44 as default ratio")
+		ratio = 1.44
+	}
 	log.Printf("now jump ratio is %f\n", ratio)
 	go func() {
 		for {
@@ -155,13 +167,15 @@ func main() {
 		stepCount++
 		log.Printf("step: %d\n", stepCount)
 		filename := shotImages(stepCount)
-
+		// 获取截图
 		infile, err := os.Open(filename)
 		checkErr(err)
 		img, err := png.Decode(infile)
 		checkErr(err)
+		//计算应该跳的时间
 		ms, err := jump.CalSwipeMs(basePath , stepCount , ratio, img )
 		checkErr(err)
+
 		_, err = exec.Command(adb, "shell", "/system/bin/input", "swipe", "320", "410", "320", "410", strconv.Itoa(ms)).Output()
 		checkErr(err)
 		infile.Close()
@@ -171,6 +185,8 @@ func main() {
 	}
 }
 
+
+//测试用
 func decodeImg(filename string) image.Image {
 	infile, err := os.Open(filename)
 	checkErr(err)

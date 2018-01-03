@@ -63,6 +63,7 @@ func calSwipeMs(startCoor, nextCoor image.Point, ratio float64) int {
 	return ms
 }
 
+// 描点
 func drawPoint(dealImg draw.Image, currentCoor image.Point, rgbColor color.RGBA) {
 	for i := currentCoor.X - 5; i < currentCoor.X+5; i++ {
 		for j := currentCoor.Y - 5; j < currentCoor.Y+5; j++ {
@@ -105,6 +106,7 @@ func CalSwipeMs(basePath string, stepCount int, ratio float64, img image.Image) 
 	drawPoint(dealImg, startCoor, red)
 	//描出背景
 	drawPoint(dealImg, bgCoor, blue)
+
 	//保存debug 的图
 	dealFilename := basePath + "/debugger/" + strconv.Itoa(stepCount) + "_deal.png"
 	dealFileFp, err := os.Create(dealFilename)
@@ -199,7 +201,7 @@ func FindNextCoor(pngdec image.Image, startCoor, bgCoor image.Point) (targetPoin
 		return
 	}
 	//使用纯色搜索算法
-	targetPoint, err = Maze(pngdec, leftTopPoint, targetColor)
+	targetPoint, err = maze(pngdec, leftTopPoint, targetColor)
 	log.Printf("纯色搜索算法结果：%v", targetPoint)
 	if err != nil {
 		targetPoint.X = leftTopPoint.X
@@ -212,7 +214,7 @@ func FindNextCoor(pngdec image.Image, startCoor, bgCoor image.Point) (targetPoin
 }
 
 // 向左下角进行搜索
-func Maze(pngdec image.Image, startPoint image.Point, targetColor [3]int) (point image.Point, err error) {
+func maze(pngdec image.Image, startPoint image.Point, targetColor [3]int) (point image.Point, err error) {
 	var targetGraphicsPointArr [4]image.Point
 	// 纯色 目标图形使用 迷宫算法
 	//走迷宫算法，获取 另外三个点,
