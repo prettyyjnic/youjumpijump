@@ -1,11 +1,12 @@
 # 微信跳一跳小帮手
 参考：https://github.com/faceair/youjumpijump
-
 用 Golang 实现是因为我只会 Golang,
 参数基于 小米 5s，没有做其他机型适配，因为我只有小米 5s
 
-## 下载地址
+## 支付宝红包
+快来领取支付宝跨年红包！1月1日起还有机会额外获得专享红包哦！复制此消息，打开最新版支付宝就能领取！nwiBb690VI
 
+## 下载地址
 Android [下载地址](https://pan.baidu.com/s/1pK8Vyob)
 密码：21pk
 
