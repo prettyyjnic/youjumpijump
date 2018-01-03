@@ -258,7 +258,7 @@ func maze(pngdec image.Image, startPoint image.Point, targetColor [3]int) (point
 	topDistinct := math.Abs(float64(targetGraphicsPointArr[2].Y-targetGraphicsPointArr[0].Y)) // 最下和最上
 	log.Printf("纯色算法结果 %v left: %d leftBottom %d top: %d minPoinDistanct: %d\n", targetGraphicsPointArr, leftTopDistinct,
 		leftBottomDistinct, topDistinct, minPoinDistanct)
-	if leftTopDistinct < minPoinDistanct || topDistinct < minPoinDistanct * 2 || leftBottomDistinct < minPoinDistanct {
+	if leftTopDistinct < minPoinDistanct || topDistinct < minPoinDistanct * 1.5 || leftBottomDistinct < minPoinDistanct {
 		err = errors.New("点距过小，不合适")
 	}
 	return
