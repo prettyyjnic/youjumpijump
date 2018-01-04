@@ -15,6 +15,7 @@ import (
 	"time"
 	"io/ioutil"
 	"runtime/debug"
+	rand2 "math/rand"
 )
 
 var basePath string
@@ -150,6 +151,8 @@ func main() {
 	var stepCount int // 步数
 	ratio = 1.44
 
+	r := rand2.New(rand2.NewSource(time.Now().UnixNano()))
+
 	fmt.Print("input jump ratio (recommend 1.44):")
 	_, err = fmt.Scanln(&ratio)
 	if err != nil {
@@ -192,8 +195,9 @@ func main() {
 		checkErr(err)
 		infile.Close()
 
-		os.Remove(filename) // 删除临时文件		
-		<-time.After(1500 * time.Millisecond)
+		os.Remove(filename) // 删除临时文件
+
+		<-time.After( time.Duration(ms * 2 + r.Intn(100)) * time.Millisecond  )
 	}
 }
 
