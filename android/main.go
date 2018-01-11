@@ -133,6 +133,7 @@ func check(){
 
 	log.Println("nextCoor (438,888)", nextCoor)
 	log.Println("current (694,1071)", target)
+
 }
 
 // 小米5s可以正常运行
@@ -145,7 +146,7 @@ func main() {
 	//fmt.Println(tmp)
 	//return
 	// check()
-	// return
+	 //return
 	var ratio float64
 	var err error
 	var stepCount int // 步数
@@ -190,8 +191,9 @@ func main() {
 		//计算应该跳的时间
 		ms, err := jump.CalSwipeMs(basePath , stepCount , ratio, img )
 		checkErr(err)
-
-		_, err = exec.Command(adb, "shell", "/system/bin/input", "swipe", "320", "410", "320", "410", strconv.Itoa(ms)).Output()
+		x:= strconv.Itoa( r.Intn(50)+200 )
+		y:= strconv.Itoa( r.Intn(50)+300 )
+		_, err = exec.Command(adb, "shell", "/system/bin/input", "swipe", x, y, x, y, strconv.Itoa(ms)).Output()
 		checkErr(err)
 		infile.Close()
 

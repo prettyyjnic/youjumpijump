@@ -7,8 +7,8 @@
 快来领取支付宝跨年红包！1月1日起还有机会额外获得专享红包哦！复制此消息，打开最新版支付宝就能领取！nwiBb690VI
 
 ## 下载地址
-Android [下载地址](https://pan.baidu.com/s/1pK8Vyob)
-密码：21pk
+Android [下载地址](https://pan.baidu.com/s/1htI9TPy)
+密码：c232
 
 ## 使用须知
 
